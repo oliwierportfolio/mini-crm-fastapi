@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-CRM</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid whitesmoke; padding: 8px; text-align: left; }
+        th { background-color: lightcyan; }
+        input, select { padding: 5px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+<h1>Lista leadów</h1>
+<a href="history.html">Przejdź do historii</a>
+<form id="leadForm">
+    <input type="text" id="name" placeholder="Imię i nazwisko" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <select id="status">
+        <option value="new">new</option>
+        <option value="contacted">contacted</option>
+        <option value="meeting">meeting</option>
+        <option value="client">client</option>
+        <option value="lost">lost</option>
+    </select>
+    <button type="submit">Dodaj leada</button>
+</form>
+<label for="filterStatus">Filtruj po statusie:</label>
+<select id="filterStatus">
+    <option value="">Wszystkie</option>
+    <option value="new">new</option>
+    <option value="contacted">contacted</option>
+    <option value="meeting">meeting</option>
+    <option value="client">client</option>
+    <option value="lost">lost</option>
+</select>
+<table id="leadsTable">
+<thead>
+<tr>
+    <th>ID</th>
+    <th>Imię</th>
+    <th>Email</th>
+    <th>Status</th>
+    <th>Utworzono</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<script>
+const apiUrl = "http://127.0.0.1:8000/leads";
+
+async function fetchLeads() {
+    const statusFilter = document.getElementById("filterStatus").value;
+    const url = statusFilter ? `${apiUrl}?status=${statusFilter}` : apiUrl;
+    const response = await fetch(url);
+    const data = await response.json();
+    const tbody = document.querySelector("#leadsTable tbody");
+    tbody.innerHTML = "";
+    data.leads.forEach(lead => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${lead.id}</td>
+            <td>${lead.name}</td>
+            <td>${lead.email}</td>
+            <td>${lead.status}</td>
+            <td>${lead.created_at}</td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+async function addLead(event) {
+    event.preventDefault();
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const status = document.getElementById("status").value;
+    const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({name, email, status})
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        alert(`Błąd: ${err.detail || response.status}`);
+        return;
+    }
+    document.getElementById("leadForm").reset();
+    await fetchLeads();
+}
+
+document.getElementById("leadForm").addEventListener("submit", addLead);
+document.getElementById("filterStatus").addEventListener("change", fetchLeads);
+fetchLeads();
+</script>
+</body>
+</html>

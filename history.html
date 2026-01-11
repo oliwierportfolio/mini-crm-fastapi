@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOGS</title>
+<style>
+    table { 
+        border-collapse: collapse; width: 100%;
+    }
+    th, td { 
+        border: 1px solid whitesmoke; padding: 8px; text-align: left;
+    }
+    th {
+        background-color: lightcyan;
+    }
+</style>
+</head>
+<body>
+<h1>Historia leadów</h1>
+<a href="index.html">Wróć do listy leadów</a>
+<table id="historyTable">
+<thead>
+<tr>
+    <th>Lead ID</th>
+    <th>Stary status</th>
+    <th>Nowy status</th>
+    <th>Czas zmiany</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<script>
+const historyApiUrl = "http://127.0.0.1:8000/leads"; 
+
+async function fetchHistory() {
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML = "";
+    try {
+        const leadsRes = await fetch(historyApiUrl);
+        const leadsData = await leadsRes.json();
+        for (const lead of leadsData.leads) {
+            const historyRes = await fetch(`${historyApiUrl}/${lead.id}/history`);
+            const historyData = await historyRes.json();
+
+            for (const entry of historyData.history) {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${lead.id}</td>
+                    <td>${entry.old_status}</td>
+                    <td>${entry.new_status}</td>
+                    <td>${new Date(entry.changed_at).toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+    } catch (err) {
+        console.error("Błąd przy pobieraniu historii:", err);
+    }
+}
+
+fetchHistory();
+</script>
+</body>
+</html>
